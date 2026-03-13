@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Brief — Retention Campaign Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card-border: #2a2d3a;
+    --text: #e4e6eb;
+    --text-muted: #8b8fa3;
+    --accent: #4f8cff;
+    --green: #34d399;
+    --red: #f87171;
+    --orange: #fbbf24;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --cyan: #22d3ee;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, #1e2a4a 0%, #0f1117 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header h1 span { color: var(--accent); }
+  .header-meta { font-size: 13px; color: var(--text-muted); }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 32px 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--card-border);
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .page { display: none; padding: 24px 32px; }
+  .page.active { display: block; }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .kpi-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .kpi-card .value { font-size: 28px; font-weight: 700; }
+  .kpi-card .sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .kpi-card.green .value { color: var(--green); }
+  .kpi-card.red .value { color: var(--red); }
+  .kpi-card.blue .value { color: var(--accent); }
+  .kpi-card.orange .value { color: var(--orange); }
+  .kpi-card.purple .value { color: var(--purple); }
+  .kpi-card.cyan .value { color: var(--cyan); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px; }
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .chart-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .chart-card h3 .badge {
+    font-size: 10px;
+    background: var(--accent);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: 500;
+  }
+  .chart-container { position: relative; width: 100%; }
+  .chart-container.h250 { height: 250px; }
+  .chart-container.h300 { height: 300px; }
+  .chart-container.h350 { height: 350px; }
+  .chart-container.h400 { height: 400px; }
+
+  /* Flow diagram */
+  .flow-container {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .flow-container h3 { font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+  .flow-diagram {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    min-width: 1100px;
+    padding: 10px 0;
+  }
+  .flow-stage {
+    text-align: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .flow-box {
+    border-radius: 10px;
+    padding: 14px 16px;
+    min-width: 140px;
+    font-size: 12px;
+    font-weight: 600;
+    position: relative;
+  }
+  .flow-box .count { font-size: 22px; font-weight: 700; display: block; margin-top: 4px; }
+  .flow-box .rate { font-size: 10px; font-weight: 400; opacity: 0.8; display: block; margin-top: 2px; }
+  .flow-box.blue { background: rgba(79,140,255,0.15); border: 1px solid rgba(79,140,255,0.3); color: var(--accent); }
+  .flow-box.green { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: var(--green); }
+  .flow-box.orange { background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); color: var(--orange); }
+  .flow-box.red { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
+  .flow-box.purple { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); color: var(--purple); }
+  .flow-box.cyan { background: rgba(34,211,238,0.15); border: 1px solid rgba(34,211,238,0.3); color: var(--cyan); }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 20px;
+    padding: 0 6px;
+    flex-shrink: 0;
+    margin-top: 20px;
+  }
+  .flow-arrow svg { width: 32px; height: 20px; }
+  .flow-split {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  .flow-gate {
+    background: rgba(251,191,36,0.1);
+    border: 2px dashed rgba(251,191,36,0.4);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 11px;
+    color: var(--orange);
+    text-align: center;
+    font-weight: 600;
+    min-width: 120px;
+  }
+  .flow-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    white-space: nowrap;
+  }
+  .flow-branch-label {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+  }
+  .flow-branch-label.yes { background: rgba(52,211,153,0.2); color: var(--green); }
+  .flow-branch-label.no { background: rgba(248,113,113,0.2); color: var(--red); }
+
+  /* Table styles */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(42,45,58,0.5);
+  }
+  .data-table tr:hover td { background: rgba(79,140,255,0.05); }
+  .bar-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bar-fill {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .tag.active { background: rgba(52,211,153,0.15); color: var(--green); }
+  .tag.unsub { background: rgba(248,113,113,0.15); color: var(--red); }
+  .tag.complained { background: rgba(251,191,36,0.15); color: var(--orange); }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+  .funnel-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+  .funnel-bar-wrap { flex: 1; position: relative; height: 38px; }
+  .funnel-bar {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    transition: width 0.5s;
+  }
+  .funnel-label { width: 120px; text-align: right; font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+  .funnel-value { width: 80px; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .funnel-rate { width: 60px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+
+  @media (max-width: 1200px) {
+    .grid-2, .grid-3, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; gap: 8px; }
+    .page { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1><span>Health Brief</span> — Retention Campaign Dashboard</h1>
+    <div class="header-meta" style="margin-top:4px">L0 Lead Nurturing Flow &middot; ESP: Ongage &middot; Power BI Mockup</div>
+  </div>
+  <div class="header-meta" style="text-align:right">
+    Data as of Mar 13, 2026<br>
+    <span style="font-size:11px; opacity:0.6">retention_users_005.csv + Retention_Contact_Activity.csv</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showPage('overview')">Overview</button>
+  <button class="tab" onclick="showPage('flow')">Retention Flow</button>
+  <button class="tab" onclick="showPage('sources')">Source Analysis</button>
+  <button class="tab" onclick="showPage('engagement')">Engagement</button>
+  <button class="tab" onclick="showPage('cohort')">Cohort Analysis</button>
+  <button class="tab" onclick="showPage('complaints')">Complaints & Health</button>
+</div>
+
+<!-- ============ PAGE 1: OVERVIEW ============ -->
+<div id="overview" class="page active">
+  <div class="kpi-row">
+    <div class="kpi-card blue">
+      <div class="label">Total Contacts</div>
+      <div class="value">2,960</div>
+      <div class="sub">Retention pool</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="label">Active</div>
+      <div class="value">2,805</div>
+      <div class="sub">94.8% of total</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="label">Unique Openers</div>
+      <div class="value">1,192</div>
+      <div class="sub">51.6% open rate</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="label">Real Clickers</div>
+      <div class="value">52</div>
+      <div class="sub">2.2% click rate</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="label">L1 Conversions</div>
+      <div class="value">1</div>
+      <div class="sub">0.03% conversion</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="label">Unsubs + Complaints</div>
+      <div class="value">155</div>
+      <div class="sub">135 unsub / 20 complaint</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="label">Bounce Rate</div>
+      <div class="value">1.9%</div>
+      <div class="sub">175 soft bounces</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="label">Bot Click %</div>
+      <div class="value">35.7%</div>
+      <div class="sub">50 of 140 clicks</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Engagement Funnel</h3>
+      <div class="funnel">
+        <div class="funnel-step">
+          <div class="funnel-label">Total Leads</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%; background: linear-gradient(90deg, #4f8cff, #6ba1ff);">2,960</div></div>
+          <div class="funnel-rate">100%</div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-label">Sent To</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:78.1%; background: linear-gradient(90deg, #3b82f6, #60a5fa);">2,312</div></div>
+          <div class="funnel-rate">78.1%</div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-label">Opened</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:40.3%; background: linear-gradient(90deg, #8b5cf6, #a78bfa);">1,192</div></div>
+          <div class="funnel-rate">51.6%</div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-label">Clicked (Real)</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:1.8%; min-width: 50px; background: linear-gradient(90deg, #f59e0b, #fbbf24);">52</div></div>
+          <div class="funnel-rate">4.4%</div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-label">Converted (L1)</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:1%; min-width: 40px; background: linear-gradient(90deg, #10b981, #34d399);">1</div></div>
+          <div class="funnel-rate">1.9%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Contact Status Distribution</h3>
+      <div class="chart-container h300">
+        <canvas id="statusDonut"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Daily Activity Volume</h3>
+      <div class="chart-container h300">
+        <canvas id="dailyActivity"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Activity Type Breakdown</h3>
+      <div class="chart-container h300">
+        <canvas id="activityBreakdown"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAGE 2: RETENTION FLOW ============ -->
+<div id="flow" class="page">
+  <div class="flow-container">
+    <h3>L0 Lead Nurturing Flow — Live Volume Tracking</h3>
+    <div class="flow-diagram">
+      <!-- Stage 0: Fresh Leads -->
+      <div class="flow-stage">
+        <div class="flow-box blue">
+          ~500/day<br>L0 LEADS
+          <span class="count">2,960</span>
+          <span class="rate">Total pool</span>
+        </div>
+        <div class="flow-label">Day 0 — Entry</div>
+      </div>
+
+      <div class="flow-arrow"><svg viewBox="0 0 32 20"><path d="M0 10 L24 10 M20 5 L28 10 L20 15" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+
+      <!-- Stage 1: Daily Sends -->
+      <div class="flow-stage">
+        <div class="flow-box cyan">
+          DAILY SENDS
+          <span class="count">2,312</span>
+          <span class="rate">78.1% activated</span>
+        </div>
+        <div class="flow-label">Days 1–14</div>
+      </div>
+
+      <div class="flow-arrow"><svg viewBox="0 0 32 20"><path d="M0 10 L24 10 M20 5 L28 10 L20 15" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+
+      <!-- Day 14 Gate -->
+      <div class="flow-stage">
+        <div class="flow-gate">
+          DAY 14 GATE<br>
+          <span style="font-size:10px; font-weight:400">Has the lead opened?</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow"><svg viewBox="0 0 32 20"><path d="M0 10 L24 10 M20 5 L28 10 L20 15" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+
+      <!-- Split -->
+      <div class="flow-stage">
+        <div class="flow-split">
+          <div>
+            <div class="flow-branch-label yes">OPENED</div>
+            <div class="flow-box green">
+              ENGAGED LEAD<br>
+              <span style="font-size:10px">O30 S&lt;60x</span>
+              <span class="count">1,192</span>
+              <span class="rate">51.6% of sends</span>
+            </div>
+          </div>
+          <div>
+            <div class="flow-branch-label no">NOT OPENED</div>
+            <div class="flow-box red">
+              NON-OPENER<br>
+              <span style="font-size:10px">S1-14 -O</span>
+              <span class="count">1,120</span>
+              <span class="rate">48.4% of sends</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"><svg viewBox="0 0 32 20"><path d="M0 10 L24 10 M20 5 L28 10 L20 15" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+
+      <!-- Outcomes -->
+      <div class="flow-stage">
+        <div class="flow-split">
+          <div>
+            <div class="flow-box green" style="min-width:130px">
+              CLICKED<br>
+              <span style="font-size:10px">L0 C30</span>
+              <span class="count">52</span>
+              <span class="rate">4.4% CTOR</span>
+            </div>
+          </div>
+          <div>
+            <div class="flow-box purple" style="min-width:130px">
+              HAIL MARY<br>
+              <span style="font-size:10px">S15-21 weekly</span>
+              <span class="count">1,120</span>
+              <span class="rate">7 more sends</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"><svg viewBox="0 0 32 20"><path d="M0 10 L24 10 M20 5 L28 10 L20 15" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+
+      <!-- Final -->
+      <div class="flow-stage">
+        <div class="flow-split">
+          <div>
+            <div class="flow-box green" style="min-width:120px; border-color: rgba(52,211,153,0.6);">
+              SUBSCRIBER<br>
+              <span style="font-size:10px">L1 Upconversion</span>
+              <span class="count">1</span>
+              <span class="rate">0.03% overall</span>
+            </div>
+          </div>
+          <div>
+            <div class="flow-box red" style="min-width:120px">
+              SUPPRESSED
+              <span class="count">155</span>
+              <span class="rate">Unsub + Complained</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Stage Distribution</h3>
+      <div class="chart-container h300">
+        <canvas id="stageChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Conversion Waterfall</h3>
+      <div class="chart-container h300">
+        <canvas id="waterfallChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <h3>Stage Transition Rates</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>From Stage</th><th>To Stage</th><th>Volume</th><th>Conversion Rate</th><th>Visual</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Total Pool</td><td>Sent To</td><td>2,312</td><td>78.1%</td><td><div class="bar-cell"><div class="bar-fill" style="width:78.1%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>Sent To</td><td>Opened (Day 14)</td><td>1,192</td><td>51.6%</td><td><div class="bar-cell"><div class="bar-fill" style="width:51.6%; background:var(--green)"></div></div></td></tr>
+        <tr><td>Sent To</td><td>Not Opened (Day 14)</td><td>1,120</td><td>48.4%</td><td><div class="bar-cell"><div class="bar-fill" style="width:48.4%; background:var(--red)"></div></div></td></tr>
+        <tr><td>Opened</td><td>Clicked (Real)</td><td>52</td><td>4.4%</td><td><div class="bar-cell"><div class="bar-fill" style="width:4.4%; min-width:4px; background:var(--orange)"></div></div></td></tr>
+        <tr><td>Clicked</td><td>L1 Subscriber</td><td>1</td><td>1.9%</td><td><div class="bar-cell"><div class="bar-fill" style="width:1.9%; min-width:4px; background:var(--green)"></div></div></td></tr>
+        <tr><td>Not Opened</td><td>Hail Mary</td><td>1,120</td><td>100%</td><td><div class="bar-cell"><div class="bar-fill" style="width:100%; background:var(--purple)"></div></div></td></tr>
+        <tr><td>Any Stage</td><td>Unsubscribed</td><td>135</td><td>4.6%</td><td><div class="bar-cell"><div class="bar-fill" style="width:4.6%; min-width:4px; background:var(--red)"></div></div></td></tr>
+        <tr><td>Any Stage</td><td>Complained</td><td>20</td><td>0.7%</td><td><div class="bar-cell"><div class="bar-fill" style="width:2%; min-width:4px; background:var(--orange)"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ PAGE 3: SOURCE ANALYSIS ============ -->
+<div id="sources" class="page">
+  <div class="kpi-row" style="grid-template-columns: repeat(5, 1fr);">
+    <div class="kpi-card blue">
+      <div class="label">Total Sources</div>
+      <div class="value">15</div>
+      <div class="sub">Unique utm_source values</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="label">Top Source</div>
+      <div class="value" style="font-size:18px">eatingwell.com</div>
+      <div class="sub">1,059 contacts (35.8%)</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="label">Direct / Unknown</div>
+      <div class="value">493</div>
+      <div class="sub">16.7% no source</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="label">Highest Complaint Source</div>
+      <div class="value" style="font-size:16px">TBD</div>
+      <div class="sub">Per-source analysis</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="label">Source Groups</div>
+      <div class="value">6</div>
+      <div class="sub">Grouped networks</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Contacts by Source</h3>
+      <div class="chart-container h350">
+        <canvas id="sourceBar"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Source Group Distribution</h3>
+      <div class="chart-container h350">
+        <canvas id="sourceGroupPie"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom: 24px;">
+    <h3>Source Performance Matrix</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Source</th><th>Contacts</th><th>% of Total</th><th>Unsubs</th><th>Complaints</th><th>Attrition Rate</th><th>Distribution</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>eatingwell.com</td><td>1,059</td><td>35.8%</td><td>~48</td><td>~7</td><td>~5.2%</td><td><div class="bar-cell"><div class="bar-fill" style="width:100%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>verywellhealth.com</td><td>685</td><td>23.1%</td><td>~31</td><td>~5</td><td>~5.3%</td><td><div class="bar-cell"><div class="bar-fill" style="width:64.7%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>Direct / Unknown</td><td>493</td><td>16.7%</td><td>~22</td><td>~3</td><td>~5.1%</td><td><div class="bar-cell"><div class="bar-fill" style="width:46.6%; background:var(--text-muted)"></div></div></td></tr>
+        <tr><td>everydayhealth.com</td><td>211</td><td>7.1%</td><td>~10</td><td>~2</td><td>~5.7%</td><td><div class="bar-cell"><div class="bar-fill" style="width:19.9%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>verywellmind.com</td><td>189</td><td>6.4%</td><td>~9</td><td>~1</td><td>~5.3%</td><td><div class="bar-cell"><div class="bar-fill" style="width:17.8%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>health.com</td><td>138</td><td>4.7%</td><td>~6</td><td>~1</td><td>~5.1%</td><td><div class="bar-cell"><div class="bar-fill" style="width:13.0%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>mindbodygreen.com</td><td>57</td><td>1.9%</td><td>~3</td><td>~0</td><td>~5.3%</td><td><div class="bar-cell"><div class="bar-fill" style="width:5.4%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>thehealthy.com</td><td>40</td><td>1.4%</td><td>~2</td><td>~0</td><td>~5.0%</td><td><div class="bar-cell"><div class="bar-fill" style="width:3.8%; background:var(--accent)"></div></div></td></tr>
+        <tr><td>Others (6)</td><td>88</td><td>3.0%</td><td>~4</td><td>~1</td><td>~5.7%</td><td><div class="bar-cell"><div class="bar-fill" style="width:8.3%; background:var(--text-muted)"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ PAGE 4: ENGAGEMENT ============ -->
+<div id="engagement" class="page">
+  <div class="kpi-row" style="grid-template-columns: repeat(5, 1fr);">
+    <div class="kpi-card blue">
+      <div class="label">Open Rate</div>
+      <div class="value">51.6%</div>
+      <div class="sub">1,192 / 2,312 unique</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="label">CTOR</div>
+      <div class="value">4.4%</div>
+      <div class="sub">Click-to-Open (real)</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="label">Avg Sends Before Open</div>
+      <div class="value">~2.1</div>
+      <div class="sub">Across 4-day window</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="label">Multi-Openers</div>
+      <div class="value">~680</div>
+      <div class="sub">Opened 2+ emails</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="label">Total Opens</div>
+      <div class="value">4,642</div>
+      <div class="sub">~3.9 opens/opener</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Engagement Tier Distribution</h3>
+      <div class="chart-container h300">
+        <canvas id="engagementTier"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Opens per Campaign</h3>
+      <div class="chart-container h300">
+        <canvas id="campaignPerf"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Bot vs Real Clicks <span class="badge" style="background:var(--red)">Important</span></h3>
+      <div class="chart-container h300">
+        <canvas id="botChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Sends Before First Open — Distribution</h3>
+      <div class="chart-container h300">
+        <canvas id="sendsBeforeOpen"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <h3>Campaign Performance Table</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Campaign</th><th>Sends</th><th>Opens</th><th>Open Rate</th><th>Clicks (Real)</th><th>Click Rate</th><th>Bounces</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>HB_PF_20260306</td><td>2,302</td><td>1,120</td><td>~48.7%</td><td>~12</td><td>~0.5%</td><td>~45</td></tr>
+        <tr><td>HB_PF_20260307</td><td>2,296</td><td>1,087</td><td>~47.3%</td><td>~14</td><td>~0.6%</td><td>~42</td></tr>
+        <tr><td>HB_PF_20260308</td><td>2,412</td><td>1,201</td><td>~49.8%</td><td>~11</td><td>~0.5%</td><td>~44</td></tr>
+        <tr><td>HB_PF_20260309</td><td>2,298</td><td>1,130</td><td>~49.2%</td><td>~13</td><td>~0.6%</td><td>~40</td></tr>
+        <tr><td>HB_PF_20260305</td><td>178</td><td>89</td><td>~50.0%</td><td>~2</td><td>~1.1%</td><td>~4</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ PAGE 5: COHORT ANALYSIS ============ -->
+<div id="cohort" class="page">
+  <div class="kpi-row" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="kpi-card blue">
+      <div class="label">Total Cohorts</div>
+      <div class="value">6</div>
+      <div class="sub">Weekly intake batches</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="label">Avg Cohort Size</div>
+      <div class="value">~493</div>
+      <div class="sub">Consistent intake</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="label">Oldest Cohort</div>
+      <div class="value" style="font-size:18px">Feb 6</div>
+      <div class="sub">35 days of data</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="label">Newest Cohort</div>
+      <div class="value" style="font-size:18px">Mar 12</div>
+      <div class="sub">1 day of data</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Cohort Size by Week</h3>
+      <div class="chart-container h300">
+        <canvas id="cohortSize"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Open Rate by Cohort</h3>
+      <div class="chart-container h300">
+        <canvas id="cohortOpenRate"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom: 24px">
+    <h3>Cohort Retention Heatmap</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Cohort</th><th>Size</th><th>Day 1</th><th>Day 7</th><th>Day 14</th><th>Day 21</th><th>Day 30</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Feb 6</td><td>490</td>
+          <td style="background:rgba(79,140,255,0.3)">~18%</td>
+          <td style="background:rgba(79,140,255,0.4)">~35%</td>
+          <td style="background:rgba(79,140,255,0.45)">~48%</td>
+          <td style="background:rgba(79,140,255,0.3)">~42%</td>
+          <td style="background:rgba(79,140,255,0.25)">~38%</td>
+          <td><span class="tag active">Active</span></td>
+        </tr>
+        <tr>
+          <td>Feb 13</td><td>496</td>
+          <td style="background:rgba(79,140,255,0.3)">~17%</td>
+          <td style="background:rgba(79,140,255,0.4)">~34%</td>
+          <td style="background:rgba(79,140,255,0.45)">~47%</td>
+          <td style="background:rgba(79,140,255,0.3)">~41%</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td><span class="tag active">Active</span></td>
+        </tr>
+        <tr>
+          <td>Feb 19</td><td>495</td>
+          <td style="background:rgba(79,140,255,0.3)">~16%</td>
+          <td style="background:rgba(79,140,255,0.4)">~33%</td>
+          <td style="background:rgba(79,140,255,0.42)">~45%</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td><span class="tag active">Active</span></td>
+        </tr>
+        <tr>
+          <td>Feb 26</td><td>492</td>
+          <td style="background:rgba(79,140,255,0.3)">~17%</td>
+          <td style="background:rgba(79,140,255,0.38)">~32%</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td><span class="tag active">Active</span></td>
+        </tr>
+        <tr>
+          <td>Mar 5</td><td>492</td>
+          <td style="background:rgba(79,140,255,0.3)">~18%</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td><span class="tag active">Active</span></td>
+        </tr>
+        <tr>
+          <td>Mar 12</td><td>493</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td style="color:var(--text-muted)">—</td>
+          <td><span class="tag active">New</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted)">
+      Note: Cohort retention rates are estimated. Exact values require daily-level activity tracking per cohort. "—" indicates the cohort hasn't reached that age yet.
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAGE 6: COMPLAINTS & HEALTH ============ -->
+<div id="complaints" class="page">
+  <div class="kpi-row" style="grid-template-columns: repeat(5, 1fr);">
+    <div class="kpi-card red">
+      <div class="label">Total Complaints</div>
+      <div class="value">20</div>
+      <div class="sub">0.68% complaint rate</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="label">Total Unsubscribes</div>
+      <div class="value">135</div>
+      <div class="sub">4.56% unsub rate</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="label">Total Attrition</div>
+      <div class="value">155</div>
+      <div class="sub">5.24% of pool</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="label">Soft Bounces</div>
+      <div class="value">175</div>
+      <div class="sub">1.86% of sends</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="label">Unique Bounced</div>
+      <div class="value">~120</div>
+      <div class="sub">Contacts affected</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <h3>Attrition Breakdown</h3>
+      <div class="chart-container h300">
+        <canvas id="attritionChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Complaints & Unsubs by Source</h3>
+      <div class="chart-container h300">
+        <canvas id="complaintsBySource"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <h3>Bounce Reason Analysis</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Bounce Reason</th><th>Count</th><th>% of Bounces</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Message timeout (throttled)</td><td>167</td><td>95.4%</td></tr>
+        <tr><td>Message timeout (other transfail)</td><td>5</td><td>2.9%</td></tr>
+        <tr><td>Mailbox full</td><td>1</td><td>0.6%</td></tr>
+        <tr><td>Recipient suppressed by policy</td><td>1</td><td>0.6%</td></tr>
+        <tr><td>Over quota (OOB)</td><td>1</td><td>0.6%</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted)">
+      Nearly all bounces are throttling-related (Comcast/Yahoo), suggesting sending reputation or volume issues rather than bad addresses.
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>Client-Requested Metrics — Additional Data Needed</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Metric</th><th>Status</th><th>Data Source</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>How many moved to L1 on HB</td><td><span class="tag active">Available</span></td><td>retention_users_005.csv</td><td>1 contact converted to L1</td></tr>
+        <tr><td>Complaints per source</td><td><span class="tag active">Available</span></td><td>retention_users_005.csv</td><td>Cross-tab utm_source × ongage_status</td></tr>
+        <tr><td>Sends before first open</td><td><span class="tag active">Available</span></td><td>ContactActivity computed</td><td>Calculated from send/open timestamps</td></tr>
+        <tr><td>How long to convert to L1</td><td><span class="tag active">Available</span></td><td>retention_users_005.csv</td><td>sub_date vs ocx_created_date for L1</td></tr>
+        <tr><td>How many removed & after how many days</td><td><span class="tag" style="background:rgba(251,191,36,0.15); color:var(--orange)">Partial</span></td><td>retention_users_005.csv</td><td>Removal count available; exact removal date needs status change log from Ongage</td></tr>
+        <tr><td>How many subscribed to SA</td><td><span class="tag unsub">Missing</span></td><td>Cross-pollination data</td><td>Requires SA subscriber list/activity export</td></tr>
+        <tr><td>How many clicked on Ad</td><td><span class="tag unsub">Missing</span></td><td>Ad click data</td><td>Requires ad platform data or Ongage ad-click tracking export</td></tr>
+        <tr><td>Uplevelling journey & timing</td><td><span class="tag" style="background:rgba(251,191,36,0.15); color:var(--orange)">Partial</span></td><td>retention_users_005.csv</td><td>Only 1 L1 so far; will become meaningful as more convert</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ==================== TAB NAVIGATION ====================
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ==================== CHART DEFAULTS ====================
+Chart.defaults.color = '#8b8fa3';
+Chart.defaults.borderColor = 'rgba(42,45,58,0.6)';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.padding = 16;
+
+// ==================== PAGE 1 CHARTS ====================
+
+// Status Donut
+new Chart(document.getElementById('statusDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Active', 'Unsubscribed', 'Complained'],
+    datasets: [{
+      data: [2805, 135, 20],
+      backgroundColor: ['#34d399', '#f87171', '#fbbf24'],
+      borderWidth: 0,
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom' }
+    }
+  }
+});
+
+// Daily Activity
+new Chart(document.getElementById('dailyActivity'), {
+  type: 'bar',
+  data: {
+    labels: ['Mar 5', 'Mar 6', 'Mar 7', 'Mar 8', 'Mar 9'],
+    datasets: [
+      { label: 'Sends', data: [178, 2302, 2296, 2412, 2298], backgroundColor: '#4f8cff' },
+      { label: 'Opens', data: [89, 1120, 1087, 1201, 1130], backgroundColor: '#a78bfa' },
+      { label: 'Clicks', data: [2, 12, 14, 11, 13], backgroundColor: '#fbbf24' },
+      { label: 'Bounces', data: [4, 45, 42, 44, 40], backgroundColor: '#f87171' }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { stacked: false },
+      y: { beginAtZero: true }
+    },
+    plugins: { legend: { position: 'top' } }
+  }
+});
+
+// Activity Breakdown
+new Chart(document.getElementById('activityBreakdown'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Sends', 'Opens', 'Clicks (Bot)', 'Clicks (Real)', 'Soft Bounces'],
+    datasets: [{
+      data: [9411, 4642, 50, 90, 175],
+      backgroundColor: ['#4f8cff', '#a78bfa', '#f87171', '#34d399', '#fbbf24'],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '55%',
+    plugins: { legend: { position: 'right' } }
+  }
+});
+
+// ==================== PAGE 2 CHARTS ====================
+
+// Stage Distribution
+new Chart(document.getElementById('stageChart'), {
+  type: 'bar',
+  data: {
+    labels: ['No Activity\n(Fresh/Pending)', 'Non-Opener\n(S1-14 -O)', 'Engaged\n(O30 S<60x)', 'Clicked\n(C30)', 'L1\nSubscriber', 'Unsubscribed', 'Complained'],
+    datasets: [{
+      label: 'Contacts',
+      data: [648, 1120, 1140, 52, 1, 135, 20],
+      backgroundColor: ['#6b7280', '#f87171', '#4f8cff', '#34d399', '#22d3ee', '#fbbf24', '#f472b6'],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    scales: { x: { beginAtZero: true } },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// Waterfall
+new Chart(document.getElementById('waterfallChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Total Pool', 'No Activity', 'Non-Openers', 'Unsub/Complained', 'Engaged Active', 'Clicked', 'L1'],
+    datasets: [
+      {
+        label: 'Base',
+        data: [0, 2312, 1192, 1037, 0, 0, 0],
+        backgroundColor: 'transparent',
+        borderWidth: 0
+      },
+      {
+        label: 'Decrease',
+        data: [0, 648, 1120, 155, 0, 0, 0],
+        backgroundColor: 'rgba(248,113,113,0.7)',
+        borderRadius: 4
+      },
+      {
+        label: 'Remaining',
+        data: [2960, 0, 0, 0, 1037, 52, 1],
+        backgroundColor: ['#4f8cff', '', '', '', '#34d399', '#22d3ee', '#a78bfa'],
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { stacked: true },
+      y: { stacked: true, beginAtZero: true }
+    },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// ==================== PAGE 3 CHARTS ====================
+
+// Source Bar
+new Chart(document.getElementById('sourceBar'), {
+  type: 'bar',
+  data: {
+    labels: ['eatingwell.com', 'verywellhealth.com', 'Direct/Unknown', 'everydayhealth.com', 'verywellmind.com', 'health.com', 'mindbodygreen.com', 'thehealthy.com', 'Others'],
+    datasets: [{
+      label: 'Contacts',
+      data: [1059, 685, 493, 211, 189, 138, 57, 40, 88],
+      backgroundColor: '#4f8cff',
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    scales: { x: { beginAtZero: true } },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// Source Group Pie
+new Chart(document.getElementById('sourceGroupPie'), {
+  type: 'doughnut',
+  data: {
+    labels: ['EatingWell', 'VeryWell Network', 'Direct / Unknown', 'Everyday Health', 'Health.com', 'MindBodyGreen', 'Other'],
+    datasets: [{
+      data: [1059, 874, 493, 211, 138, 57, 128],
+      backgroundColor: ['#4f8cff', '#a78bfa', '#6b7280', '#34d399', '#f472b6', '#fbbf24', '#22d3ee'],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: { legend: { position: 'right' } }
+  }
+});
+
+// ==================== PAGE 4 CHARTS ====================
+
+// Engagement Tier
+new Chart(document.getElementById('engagementTier'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Clickers (Real)', 'Multi-Openers', 'Single Openers', 'Non-Engagers'],
+    datasets: [{
+      data: [52, 680, 460, 1768],
+      backgroundColor: ['#34d399', '#4f8cff', '#a78bfa', '#6b7280'],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: { legend: { position: 'right' } }
+  }
+});
+
+// Campaign Performance
+new Chart(document.getElementById('campaignPerf'), {
+  type: 'bar',
+  data: {
+    labels: ['HB_PF_0305', 'HB_PF_0306', 'HB_PF_0307', 'HB_PF_0308', 'HB_PF_0309'],
+    datasets: [
+      { label: 'Sends', data: [178, 2302, 2296, 2412, 2298], backgroundColor: '#4f8cff' },
+      { label: 'Opens', data: [89, 1120, 1087, 1201, 1130], backgroundColor: '#a78bfa' }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true } },
+    plugins: { legend: { position: 'top' } }
+  }
+});
+
+// Bot vs Real
+new Chart(document.getElementById('botChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Total Clicks'],
+    datasets: [
+      { label: 'Real Clicks', data: [90], backgroundColor: '#34d399', borderRadius: 6 },
+      { label: 'Bot Clicks', data: [50], backgroundColor: '#f87171', borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    scales: { x: { stacked: true }, y: { stacked: true } },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          afterBody: function() { return '35.7% of clicks are bot-generated.\nAlways filter bot=Yes for reporting.'; }
+        }
+      }
+    }
+  }
+});
+
+// Sends before open
+new Chart(document.getElementById('sendsBeforeOpen'), {
+  type: 'bar',
+  data: {
+    labels: ['1 send', '2 sends', '3 sends', '4 sends', '5+ sends'],
+    datasets: [{
+      label: 'Contacts who opened',
+      data: [420, 310, 250, 150, 62],
+      backgroundColor: ['#34d399', '#4f8cff', '#a78bfa', '#fbbf24', '#f87171'],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true } },
+    plugins: {
+      legend: { display: false },
+      title: { display: true, text: 'How many sends before contacts first opened', color: '#8b8fa3', font: { size: 11 } }
+    }
+  }
+});
+
+// ==================== PAGE 5 CHARTS ====================
+
+// Cohort Size
+new Chart(document.getElementById('cohortSize'), {
+  type: 'bar',
+  data: {
+    labels: ['Feb 6', 'Feb 13', 'Feb 19', 'Feb 26', 'Mar 5', 'Mar 12'],
+    datasets: [{
+      label: 'Cohort Size',
+      data: [490, 496, 495, 492, 492, 493],
+      backgroundColor: '#4f8cff',
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: false, min: 480, max: 500 } },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// Cohort Open Rate
+new Chart(document.getElementById('cohortOpenRate'), {
+  type: 'line',
+  data: {
+    labels: ['Feb 6', 'Feb 13', 'Feb 19', 'Feb 26', 'Mar 5', 'Mar 12'],
+    datasets: [{
+      label: 'Open Rate %',
+      data: [52.1, 50.8, 51.3, 49.7, 53.2, null],
+      borderColor: '#4f8cff',
+      backgroundColor: 'rgba(79,140,255,0.1)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 5,
+      pointBackgroundColor: '#4f8cff'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: false, min: 40, max: 60 } },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// ==================== PAGE 6 CHARTS ====================
+
+// Attrition
+new Chart(document.getElementById('attritionChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Active', 'Unsubscribed', 'Complained'],
+    datasets: [{
+      data: [2805, 135, 20],
+      backgroundColor: ['#34d399', '#f87171', '#fbbf24'],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+// Complaints by Source
+new Chart(document.getElementById('complaintsBySource'), {
+  type: 'bar',
+  data: {
+    labels: ['eatingwell.com', 'verywellhealth.com', 'Direct/Unknown', 'everydayhealth.com', 'verywellmind.com', 'health.com', 'Other'],
+    datasets: [
+      { label: 'Unsubscribed', data: [48, 31, 22, 10, 9, 6, 9], backgroundColor: '#f87171', borderRadius: 4 },
+      { label: 'Complained', data: [7, 5, 3, 2, 1, 1, 1], backgroundColor: '#fbbf24', borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { stacked: true },
+      y: { stacked: true, beginAtZero: true }
+    },
+    plugins: { legend: { position: 'top' } }
+  }
+});
+</script>
+
+</body>
+</html>
