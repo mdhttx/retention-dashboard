@@ -733,7 +733,7 @@
           <td style="background:rgba(79,140,255,0.45)">~48%</td>
           <td style="background:rgba(79,140,255,0.3)">~42%</td>
           <td style="background:rgba(79,140,255,0.25)">~38%</td>
-          <td><span class="tag active">Active</span></td>
+          <td><span class="tag active">Running</span></td>
         </tr>
         <tr>
           <td>Feb 13</td><td>496</td>
@@ -742,7 +742,7 @@
           <td style="background:rgba(79,140,255,0.45)">~47%</td>
           <td style="background:rgba(79,140,255,0.3)">~41%</td>
           <td style="color:var(--text-muted)">—</td>
-          <td><span class="tag active">Active</span></td>
+          <td><span class="tag active">Running</span></td>
         </tr>
         <tr>
           <td>Feb 19</td><td>495</td>
@@ -751,7 +751,7 @@
           <td style="background:rgba(79,140,255,0.42)">~45%</td>
           <td style="color:var(--text-muted)">—</td>
           <td style="color:var(--text-muted)">—</td>
-          <td><span class="tag active">Active</span></td>
+          <td><span class="tag active">Running</span></td>
         </tr>
         <tr>
           <td>Feb 26</td><td>492</td>
@@ -760,7 +760,7 @@
           <td style="color:var(--text-muted)">—</td>
           <td style="color:var(--text-muted)">—</td>
           <td style="color:var(--text-muted)">—</td>
-          <td><span class="tag active">Active</span></td>
+          <td><span class="tag active">Running</span></td>
         </tr>
         <tr>
           <td>Mar 5</td><td>492</td>
@@ -769,7 +769,7 @@
           <td style="color:var(--text-muted)">—</td>
           <td style="color:var(--text-muted)">—</td>
           <td style="color:var(--text-muted)">—</td>
-          <td><span class="tag active">Active</span></td>
+          <td><span class="tag active">Running</span></td>
         </tr>
         <tr>
           <td>Mar 12</td><td>493</td>
@@ -895,7 +895,7 @@ Chart.defaults.plugins.legend.labels.padding = 16;
 new Chart(document.getElementById('statusDonut'), {
   type: 'doughnut',
   data: {
-    labels: ['Active', 'Unsubscribed', 'Complained'],
+    labels: ['Openers & Clickers', 'Unsubscribed', 'Complained'],
     datasets: [{
       data: [2805, 135, 20],
       backgroundColor: ['#34d399', '#f87171', '#fbbf24'],
@@ -982,7 +982,7 @@ new Chart(document.getElementById('stageChart'), {
 new Chart(document.getElementById('waterfallChart'), {
   type: 'bar',
   data: {
-    labels: ['Total Pool', 'No Activity', 'Non-Openers', 'Unsub/Complained', 'Engaged Active', 'Clicked', 'L1'],
+    labels: ['Total Pool', 'No Activity', 'Non-Openers', 'Unsub/Complained', 'Openers & Clickers', 'Clicked', 'L1'],
     datasets: [
       {
         label: 'Base',
@@ -1197,7 +1197,7 @@ new Chart(document.getElementById('cohortOpenRate'), {
 new Chart(document.getElementById('attritionChart'), {
   type: 'doughnut',
   data: {
-    labels: ['Active', 'Unsubscribed', 'Complained'],
+    labels: ['Openers & Clickers', 'Unsubscribed', 'Complained'],
     datasets: [{
       data: [2805, 135, 20],
       backgroundColor: ['#34d399', '#f87171', '#fbbf24'],
