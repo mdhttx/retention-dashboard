@@ -895,10 +895,10 @@ Chart.defaults.plugins.legend.labels.padding = 16;
 new Chart(document.getElementById('statusDonut'), {
   type: 'doughnut',
   data: {
-    labels: ['Openers & Clickers', 'Unsubscribed', 'Complained'],
+    labels: ['Openers', 'Non-Openers', 'Unsubscribed', 'Complained'],
     datasets: [{
-      data: [2805, 135, 20],
-      backgroundColor: ['#34d399', '#f87171', '#fbbf24'],
+      data: [1192, 1613, 135, 20],
+      backgroundColor: ['#34d399', '#4f8cff', '#f87171', '#fbbf24'],
       borderWidth: 0,
       hoverOffset: 8
     }]
@@ -982,7 +982,7 @@ new Chart(document.getElementById('stageChart'), {
 new Chart(document.getElementById('waterfallChart'), {
   type: 'bar',
   data: {
-    labels: ['Total Pool', 'No Activity', 'Non-Openers', 'Unsub/Complained', 'Openers & Clickers', 'Clicked', 'L1'],
+    labels: ['Total Pool', 'No Activity', 'Non-Openers', 'Unsub/Complained', 'Engaged', 'Clicked', 'L1'],
     datasets: [
       {
         label: 'Base',
@@ -1197,10 +1197,10 @@ new Chart(document.getElementById('cohortOpenRate'), {
 new Chart(document.getElementById('attritionChart'), {
   type: 'doughnut',
   data: {
-    labels: ['Openers & Clickers', 'Unsubscribed', 'Complained'],
+    labels: ['Openers', 'Non-Openers', 'Unsubscribed', 'Complained'],
     datasets: [{
-      data: [2805, 135, 20],
-      backgroundColor: ['#34d399', '#f87171', '#fbbf24'],
+      data: [1192, 1613, 135, 20],
+      backgroundColor: ['#34d399', '#4f8cff', '#f87171', '#fbbf24'],
       borderWidth: 0
     }]
   },
